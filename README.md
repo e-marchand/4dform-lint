@@ -29,3 +29,12 @@ defaults:
   spacing:
     allowed_values: [4, 8, 10, 12, 16, 24]
 ```
+
+## Rule Notes
+
+- `consistent_spacing` checks nearby gaps in aligned rows and columns. Large section breaks and opposite-side controls are ignored so the rule focuses on local layout rhythm.
+- `alignment_consistency` follows inferred placement:
+  - `below(...)` and `above(...)` compare left edges.
+  - `rightOf(...)` and `leftOf(...)` compare top edges.
+- Alignment warnings include the pixel delta and direction, for example `left edge is 16 px to the right` or `top edge is 2 px higher`.
+- If a layout is intentional, suppress a rule for a specific element with `ignore_rules`.

@@ -42,23 +42,53 @@ def infer_relations(
             top_delta = abs(current_frame.top - previous_frame.top)
             horizontal_candidates.append((horizontal_gap, top_delta, previous))
 
-    if vertical_candidates:
-        _, _, reference = min(vertical_candidates, key=lambda item: (item[0], item[1]))
+    best_vertical = (
+        min(vertical_candidates, key=lambda item: (item[1], item[0]))
+        if vertical_candidates
+        else None
+    )
+    best_horizontal = (
+        min(horizontal_candidates, key=lambda item: (item[1], item[0]))
+        if horizontal_candidates
+        else None
+    )
+
+    if best_vertical is not None and best_horizontal is not None:
+        vertical_gap, left_delta, vertical_reference = best_vertical
+        horizontal_gap, top_delta, horizontal_reference = best_horizontal
+        if left_delta < top_delta:
+            return f"below({vertical_reference.element_id})"
+        if top_delta < left_delta:
+            return f"rightOf({horizontal_reference.element_id})"
+        if vertical_gap <= horizontal_gap:
+            return f"below({vertical_reference.element_id})"
+        return f"rightOf({horizontal_reference.element_id})"
+
+    if best_vertical is not None:
+        _, _, reference = best_vertical
         return f"below({reference.element_id})"
-    if horizontal_candidates:
-        _, _, reference = min(horizontal_candidates, key=lambda item: (item[0], item[1]))
+    if best_horizontal is not None:
+        _, _, reference = best_horizontal
         return f"rightOf({reference.element_id})"
     return None
 
 
 def placement_target(placement: str | None) -> str | None:
+    relation = placement_relation(placement)
+    if relation is None:
+        return None
+    _, target = relation
+    return target
+
+
+def placement_relation(placement: str | None) -> tuple[str, str] | None:
     if placement is None:
         return None
     match = PLACEMENT_RE.fullmatch(placement)
     if match is None:
         return None
-    _, target = match.groups()
-    return target.strip()
+    relation, target = match.groups()
+    return relation, target.strip()
 
 
 def form_from_native(

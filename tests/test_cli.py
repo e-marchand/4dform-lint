@@ -57,6 +57,149 @@ class LintCliTests(unittest.TestCase):
         result = run_cli(str(FIXTURES_DIR / "bad-alignment.form.4DForm"))
         self.assertEqual(result.returncode, 0)
         self.assertIn("alignment_consistency", result.stdout)
+        self.assertIn("left edge is 16 px to the right", result.stdout)
+
+    def test_horizontal_alignment_warning_reports_top_delta(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            form_path = tmp / "horizontal-alignment.form.4DForm"
+            form_path.write_text(
+                json.dumps(
+                    {
+                        "$4d": {"version": "1", "kind": "form"},
+                        "destination": "detailScreen",
+                        "windowTitle": "Horizontal Alignment",
+                        "width": 320,
+                        "height": 220,
+                        "pages": [
+                            {
+                                "objects": {
+                                    "leftButton": {
+                                        "type": "button",
+                                        "top": 20,
+                                        "left": 20,
+                                        "width": 80,
+                                        "height": 24,
+                                    },
+                                    "rightButton": {
+                                        "type": "button",
+                                        "top": 26,
+                                        "left": 112,
+                                        "width": 80,
+                                        "height": 24,
+                                    },
+                                }
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result = run_cli(str(form_path))
+            self.assertEqual(result.returncode, 0)
+            self.assertIn("alignment_consistency", result.stdout)
+            self.assertIn("top edge is 6 px lower", result.stdout)
+
+    def test_large_spacing_gap_is_not_reported_for_distant_elements(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            form_path = tmp / "distant-spacing.form.4DForm"
+            form_path.write_text(
+                json.dumps(
+                    {
+                        "$4d": {"version": "1", "kind": "form"},
+                        "destination": "detailScreen",
+                        "windowTitle": "Distant Spacing",
+                        "width": 640,
+                        "height": 800,
+                        "pages": [
+                            {
+                                "objects": {
+                                    "leftTitle": {
+                                        "type": "text",
+                                        "top": 20,
+                                        "left": 20,
+                                        "width": 120,
+                                        "height": 24,
+                                    },
+                                    "rightButton": {
+                                        "type": "button",
+                                        "top": 20,
+                                        "left": 484,
+                                        "width": 120,
+                                        "height": 24,
+                                    },
+                                    "separator": {
+                                        "type": "line",
+                                        "top": 100,
+                                        "left": 20,
+                                        "width": 200,
+                                        "height": 2,
+                                    },
+                                    "statusText": {
+                                        "type": "text",
+                                        "top": 700,
+                                        "left": 20,
+                                        "width": 200,
+                                        "height": 24,
+                                    },
+                                }
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result = run_cli(str(form_path))
+            self.assertEqual(result.returncode, 0)
+            self.assertIn("No findings", result.stdout)
+
+    def test_wide_list_below_header_row_does_not_trigger_alignment_warning(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            form_path = tmp / "wide-list.form.4DForm"
+            form_path.write_text(
+                json.dumps(
+                    {
+                        "$4d": {"version": "1", "kind": "form"},
+                        "destination": "detailScreen",
+                        "windowTitle": "Wide List",
+                        "width": 640,
+                        "height": 400,
+                        "pages": [
+                            {
+                                "objects": {
+                                    "title": {
+                                        "type": "text",
+                                        "top": 20,
+                                        "left": 16,
+                                        "width": 180,
+                                        "height": 20,
+                                    },
+                                    "refresh": {
+                                        "type": "button",
+                                        "top": 20,
+                                        "left": 520,
+                                        "width": 100,
+                                        "height": 24,
+                                    },
+                                    "listbox": {
+                                        "type": "listbox",
+                                        "top": 56,
+                                        "left": 16,
+                                        "width": 604,
+                                        "height": 180,
+                                    },
+                                }
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result = run_cli(str(form_path))
+            self.assertEqual(result.returncode, 0)
+            self.assertIn("No findings", result.stdout)
 
     def test_invalid_json_is_reported_as_finding(self):
         result = run_cli(str(FIXTURES_DIR / "invalid-json.form.4DForm"), check=False)

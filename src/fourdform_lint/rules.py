@@ -3,7 +3,10 @@ from __future__ import annotations
 from itertools import combinations
 
 from .models import Finding, FormContext
-from .native import placement_target
+from .native import placement_relation
+
+
+SPACING_PROXIMITY_MULTIPLIER = 2
 
 
 def element_ignores_rule(element_ignores: set[str], rule_id: str) -> bool:
@@ -95,6 +98,7 @@ def rule_consistent_spacing(
     allowed_spacing_values: list[int],
 ) -> list[Finding]:
     allowed = set(allowed_spacing_values)
+    max_gap_to_compare = max(allowed_spacing_values) * SPACING_PROXIMITY_MULTIPLIER
     findings: list[Finding] = []
 
     for page in context.pages:
@@ -112,7 +116,7 @@ def rule_consistent_spacing(
                 ):
                     continue
                 gap = second.frame.top - first.frame.bottom
-                if gap > 0 and gap not in allowed:
+                if gap > 0 and gap <= max_gap_to_compare and gap not in allowed:
                     findings.append(
                         Finding(
                             file_path=context.display_path,
@@ -135,7 +139,7 @@ def rule_consistent_spacing(
                 ):
                     continue
                 gap = second.frame.left - first.frame.right
-                if gap > 0 and gap not in allowed:
+                if gap > 0 and gap <= max_gap_to_compare and gap not in allowed:
                     findings.append(
                         Finding(
                             file_path=context.display_path,
@@ -159,23 +163,54 @@ def rule_alignment_consistency(context: FormContext, severity: str) -> list[Find
         for element in page.elements:
             if element_ignores_rule(element.ignores, "alignment_consistency"):
                 continue
-            target = placement_target(element.placement)
-            if target is None or target == "parent":
+            relation = placement_relation(element.placement)
+            if relation is None:
+                continue
+            placement_kind, target = relation
+            if target == "parent":
                 continue
             reference = element_map.get(target)
             if reference is None:
                 continue
             if element_ignores_rule(reference.ignores, "alignment_consistency"):
                 continue
-            if element.frame.left != reference.frame.left:
+            if placement_kind in {"below", "above"}:
+                delta = element.frame.left - reference.frame.left
+                if delta == 0:
+                    continue
+                direction = "to the right" if delta > 0 else "to the left"
                 findings.append(
                     Finding(
                         file_path=context.display_path,
                         rule_id="alignment_consistency",
                         severity=severity,
                         message=(
-                            f"Element '{element.element_id}' is vertically grouped with "
-                            f"'{reference.element_id}' but their left edges do not align"
+                            f"Element '{element.element_id}' is placed {placement_kind} "
+                            f"'{reference.element_id}', but its left edge is {abs(delta)} px "
+                            f"{direction} (reference left={reference.frame.left}, "
+                            f"element left={element.frame.left}). Align their left edges "
+                            f"or ignore this rule for one of the elements."
+                        ),
+                        page_index=page.index,
+                        element_ids=(reference.element_id, element.element_id),
+                    )
+                )
+            elif placement_kind in {"rightOf", "leftOf"}:
+                delta = element.frame.top - reference.frame.top
+                if delta == 0:
+                    continue
+                direction = "lower" if delta > 0 else "higher"
+                findings.append(
+                    Finding(
+                        file_path=context.display_path,
+                        rule_id="alignment_consistency",
+                        severity=severity,
+                        message=(
+                            f"Element '{element.element_id}' is placed {placement_kind} "
+                            f"'{reference.element_id}', but its top edge is {abs(delta)} px "
+                            f"{direction} (reference top={reference.frame.top}, "
+                            f"element top={element.frame.top}). Align their top edges "
+                            f"or ignore this rule for one of the elements."
                         ),
                         page_index=page.index,
                         element_ids=(reference.element_id, element.element_id),
