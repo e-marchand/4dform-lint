@@ -1,0 +1,11 @@
+{
+	"windowTitle": "Broken",
+	"pages": [
+		{
+			"objects": {
+				"bad": {
+					"type": "text"
+				}
+			}
+		}
+	]

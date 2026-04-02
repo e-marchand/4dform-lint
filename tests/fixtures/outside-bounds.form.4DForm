@@ -1,0 +1,23 @@
+{
+	"$4d": {
+		"version": "1",
+		"kind": "form"
+	},
+	"destination": "detailScreen",
+	"windowTitle": "Bounds",
+	"width": 100,
+	"height": 100,
+	"pages": [
+		{
+			"objects": {
+				"tooWide": {
+					"type": "input",
+					"top": 10,
+					"left": 10,
+					"width": 120,
+					"height": 24
+				}
+			}
+		}
+	]
+}

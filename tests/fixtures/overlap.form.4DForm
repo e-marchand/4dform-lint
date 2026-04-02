@@ -1,0 +1,30 @@
+{
+	"$4d": {
+		"version": "1",
+		"kind": "form"
+	},
+	"destination": "detailScreen",
+	"windowTitle": "Overlap",
+	"width": 320,
+	"height": 180,
+	"pages": [
+		{
+			"objects": {
+				"fieldWhenVisible": {
+					"type": "input",
+					"top": 24,
+					"left": 24,
+					"width": 180,
+					"height": 24
+				},
+				"fieldWhenHidden": {
+					"type": "input",
+					"top": 24,
+					"left": 24,
+					"width": 180,
+					"height": 24
+				}
+			}
+		}
+	]
+}

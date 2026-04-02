@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "4dform-lint"
+version = "0.1.0"
+description = "Standalone linter for native 4D .4DForm files"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+authors = [
+  { name = "Eric" }
+]
+dependencies = [
+  "jsonschema>=4.0.0",
+  "PyYAML>=6.0",
+]
+
+[project.scripts]
+4dform-lint = "fourdform_lint.cli:main"
+
+[tool.hatch.build]
+include = [
+  "src/fourdform_lint/**/*.py",
+  "src/fourdform_lint/assets/formsSchema.json",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/fourdform_lint"]
