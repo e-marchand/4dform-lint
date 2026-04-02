@@ -28,3 +28,8 @@ include = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/fourdform_lint"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]
