@@ -622,6 +622,34 @@ class LintCliTests(unittest.TestCase):
             result = run_cli(str(form_path), cwd=tmp, check=False)
             self.assertEqual(result.returncode, 1)
             self.assertIn("shared_page_required", result.stdout)
+            self.assertIn("shared page 0 and visible page 1", result.stdout)
+
+    def test_config_shared_page_rule_rejects_form_with_no_pages(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            form_path = tmp / "empty.form.4DForm"
+            form_path.write_text(
+                json.dumps(
+                    {
+                        "$4d": {"version": "1", "kind": "form"},
+                        "destination": "detailScreen",
+                        "windowTitle": "Empty Form",
+                        "width": 320,
+                        "height": 180,
+                        "pages": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            config_path = tmp / ".4dform-lint.yaml"
+            config_path.write_text(
+                "version: 1\nrules:\n  shared_page_required: error\n",
+                encoding="utf-8",
+            )
+            result = run_cli(str(form_path), cwd=tmp, check=False)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("shared_page_required", result.stdout)
+            self.assertIn("shared page 0 and visible page 1", result.stdout)
 
     def test_invalid_config_exits_with_code_2(self):
         with tempfile.TemporaryDirectory() as tmpdir:
