@@ -6,25 +6,10 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 import yaml
+from .rules import DEFAULT_RULES, VALID_RULE_IDS
 
 
-VALID_RULE_IDS = {
-    "no_overlap",
-    "inside_bounds",
-    "consistent_spacing",
-    "alignment_consistency",
-    "shared_page_required",
-    "text_fits",
-}
 VALID_SEVERITIES = {"off", "warning", "error"}
-DEFAULT_RULES = {
-    "no_overlap": "error",
-    "inside_bounds": "error",
-    "consistent_spacing": "warning",
-    "alignment_consistency": "warning",
-    "shared_page_required": "off",
-    "text_fits": "warning",
-}
 DEFAULT_ALLOWED_SPACING = [4, 8, 10, 12, 16, 24]
 
 
@@ -228,7 +213,12 @@ def parse_page_index(value: Any, *, location: str) -> int:
     raise ConfigError(f"{location} contains an invalid page index '{value}'")
 
 
-def effective_config_for(path: Path, loaded: LoadedConfig) -> EffectiveConfig:
+def effective_config_for(
+    path: Path,
+    loaded: LoadedConfig,
+    *,
+    excluded_rules: tuple[str, ...] = (),
+) -> EffectiveConfig:
     rules = dict(loaded.rules)
     allowed_spacing_values = list(loaded.allowed_spacing_values)
     element_ignores: dict[tuple[int, str], set[str]] = {}
@@ -243,6 +233,9 @@ def effective_config_for(path: Path, loaded: LoadedConfig) -> EffectiveConfig:
                 allowed_spacing_values = list(override.allowed_spacing_values)
             for key, value in override.element_ignores.items():
                 element_ignores[key] = set(value)
+
+    for rule_id in excluded_rules:
+        rules[rule_id] = "off"
 
     return EffectiveConfig(
         rules=rules,

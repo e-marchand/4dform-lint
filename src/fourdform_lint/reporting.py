@@ -4,6 +4,7 @@ import json
 from collections import defaultdict
 
 from .models import Finding
+from .rules import RULE_SUMMARIES
 
 
 def summarize(findings: list[Finding], files_checked: int) -> dict[str, int]:
@@ -71,7 +72,7 @@ def render_sarif(findings: list[Finding], files_checked: int) -> str:
         {
             "id": rule_id,
             "name": rule_id,
-            "shortDescription": {"text": rule_id},
+            "shortDescription": {"text": RULE_SUMMARIES.get(rule_id, rule_id)},
         }
         for rule_id in unique_rules
     ]

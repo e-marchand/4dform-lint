@@ -42,6 +42,15 @@ class LintCliTests(unittest.TestCase):
         self.assertIn("fieldWhenVisible", result.stdout)
         self.assertIn("fieldWhenHidden", result.stdout)
 
+    def test_exclude_can_disable_specific_rules_for_a_run(self):
+        result = run_cli(
+            str(FIXTURES_DIR / "overlap.form.4DForm"),
+            "--exclude",
+            "no_overlap,inside_bounds",
+        )
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("No findings", result.stdout)
+
     def test_bounds_violation_is_reported(self):
         result = run_cli(str(FIXTURES_DIR / "outside-bounds.form.4DForm"), check=False)
         self.assertEqual(result.returncode, 1)
@@ -452,6 +461,16 @@ class LintCliTests(unittest.TestCase):
         result = run_cli("does-not-exist", check=False)
         self.assertEqual(result.returncode, 2)
         self.assertIn("does not exist", result.stderr)
+
+    def test_unknown_excluded_rule_exits_with_code_2(self):
+        result = run_cli(
+            str(FIXTURES_DIR / "basic.form.4DForm"),
+            "--exclude",
+            "not_a_rule",
+            check=False,
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("Unknown rule id(s) passed to --exclude", result.stderr)
 
 
 if __name__ == "__main__":

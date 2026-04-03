@@ -31,14 +31,13 @@ defaults:
     allowed_values: [4, 8, 10, 12, 16, 24]
 ```
 
-## Rule Notes
+## Rule Reference
 
-- `consistent_spacing` checks nearby gaps in aligned rows and columns. Large section breaks and opposite-side controls are ignored so the rule focuses on local layout rhythm.
-- `alignment_consistency` follows inferred placement:
-  - `below(...)` and `above(...)` compare left edges.
-  - `rightOf(...)` and `leftOf(...)` compare top edges.
-- Alignment warnings include the pixel delta and direction, for example `left edge is 16 px to the right` or `top edge is 2 px higher`.
-- `text_fits` estimates one-line text width for native `button`, `checkbox`, `radio`, and `text` objects, subtracting intrinsic control padding before checking whether the title is likely cropped.
-- `text_fits` uses each object's explicit font settings when present and falls back to the platform default font profile otherwise.
-- If an object's text is `xliff:KEY`, `text_fits` scans `.xlf` and `.xliff` files under the lint working directory and checks the longest matching translation variant it can find.
-- If a layout is intentional, suppress a rule for a specific element with `ignore_rules`.
+- [`no_overlap`](docs/rules/no_overlap.md): flags intersecting element frames on the same page.
+- [`inside_bounds`](docs/rules/inside_bounds.md): ensures elements stay within the root form bounds.
+- [`consistent_spacing`](docs/rules/consistent_spacing.md): checks nearby aligned gaps against the configured spacing scale.
+- [`alignment_consistency`](docs/rules/alignment_consistency.md): validates inferred placement alignment between related controls.
+- [`shared_page_required`](docs/rules/shared_page_required.md): optionally enforces the shared page `0` plus visible page `1` convention.
+- [`text_fits`](docs/rules/text_fits.md): estimates whether native one-line control text is likely to be cropped.
+
+If a layout is intentional, suppress a rule for a specific element with `ignore_rules`.

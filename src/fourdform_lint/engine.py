@@ -7,14 +7,7 @@ from pathlib import Path
 from .config import EffectiveConfig, LoadedConfig, effective_config_for
 from .models import Finding
 from .native import form_from_native
-from .rules import (
-    rule_alignment_consistency,
-    rule_consistent_spacing,
-    rule_inside_bounds,
-    rule_no_overlap,
-    rule_shared_page_required,
-    rule_text_fits,
-)
+from .rules import RULES_BY_ID, RuleOptions
 from .schema import load_native_form, validate_native_form
 from .xliff import load_translation_catalog
 
@@ -47,11 +40,25 @@ def display_path(path: Path, cwd: Path) -> str:
         return path.as_posix()
 
 
-def lint_paths(paths: list[Path], loaded_config: LoadedConfig, cwd: Path) -> list[Finding]:
+def lint_paths(
+    paths: list[Path],
+    loaded_config: LoadedConfig,
+    cwd: Path,
+    *,
+    excluded_rules: tuple[str, ...] = (),
+) -> list[Finding]:
     translations = load_translation_catalog(cwd)
     findings: list[Finding] = []
     for path in paths:
-        findings.extend(lint_file(path, loaded_config, cwd, translations))
+        findings.extend(
+            lint_file(
+                path,
+                loaded_config,
+                cwd,
+                translations,
+                excluded_rules=excluded_rules,
+            )
+        )
     return findings
 
 
@@ -60,9 +67,11 @@ def lint_file(
     loaded_config: LoadedConfig,
     cwd: Path,
     translations: dict[str, tuple[str, ...]] | None = None,
+    *,
+    excluded_rules: tuple[str, ...] = (),
 ) -> list[Finding]:
     path_display = display_path(path, cwd)
-    effective_config = effective_config_for(path, loaded_config)
+    effective_config = effective_config_for(path, loaded_config, excluded_rules=excluded_rules)
 
     try:
         document = load_native_form(path)
@@ -119,21 +128,12 @@ def lint_file(
 
 def run_rules(context, effective_config: EffectiveConfig) -> list[Finding]:
     findings: list[Finding] = []
+    options = RuleOptions(allowed_spacing_values=tuple(effective_config.allowed_spacing_values))
     for rule_id, severity in effective_config.rules.items():
         if severity == "off":
             continue
-        if rule_id == "shared_page_required":
-            findings.extend(rule_shared_page_required(context, severity))
-        elif rule_id == "inside_bounds":
-            findings.extend(rule_inside_bounds(context, severity))
-        elif rule_id == "no_overlap":
-            findings.extend(rule_no_overlap(context, severity))
-        elif rule_id == "consistent_spacing":
-            findings.extend(
-                rule_consistent_spacing(context, severity, effective_config.allowed_spacing_values)
-            )
-        elif rule_id == "alignment_consistency":
-            findings.extend(rule_alignment_consistency(context, severity))
-        elif rule_id == "text_fits":
-            findings.extend(rule_text_fits(context, severity))
+        rule = RULES_BY_ID.get(rule_id)
+        if rule is None:
+            continue
+        findings.extend(rule.run(context, severity, options))
     return findings
