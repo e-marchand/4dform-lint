@@ -1,0 +1,24 @@
+{
+	"$4d": {
+		"version": "1",
+		"kind": "form"
+	},
+	"destination": "detailScreen",
+	"windowTitle": "Cropped Button",
+	"width": 320,
+	"height": 180,
+	"pages": [
+		{
+			"objects": {
+				"saveButton": {
+					"type": "button",
+					"top": 20,
+					"left": 20,
+					"width": 110,
+					"height": 28,
+					"text": "Synchronize everything"
+				}
+			}
+		}
+	]
+}

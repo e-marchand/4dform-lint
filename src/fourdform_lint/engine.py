@@ -47,7 +47,7 @@ def lint_paths(
     *,
     excluded_rules: tuple[str, ...] = (),
 ) -> list[Finding]:
-    translations = load_translation_catalog(cwd)
+    translations = load_translation_catalog(paths)
     findings: list[Finding] = []
     for path in paths:
         findings.extend(

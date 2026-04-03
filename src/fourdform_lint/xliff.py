@@ -2,21 +2,53 @@ from __future__ import annotations
 
 from collections import defaultdict
 from pathlib import Path
+from typing import Iterable
 from xml.etree import ElementTree
 
 
-def load_translation_catalog(search_root: Path) -> dict[str, tuple[str, ...]]:
+def load_translation_catalog(form_paths: Iterable[Path]) -> dict[str, tuple[str, ...]]:
     catalog: dict[str, list[str]] = defaultdict(list)
     seen: dict[str, set[str]] = defaultdict(set)
 
-    if not search_root.exists():
-        return {}
-
-    for pattern in ("*.xlf", "*.xliff"):
-        for path in sorted(search_root.rglob(pattern)):
-            _collect_translations_from_file(path, catalog, seen)
+    for search_root in translation_roots_for_forms(form_paths):
+        for language_dir in sorted(search_root.iterdir()):
+            if not language_dir.is_dir() or language_dir.suffix != ".lproj":
+                continue
+            for pattern in ("*.xlf", "*.xliff"):
+                for path in sorted(language_dir.rglob(pattern)):
+                    _collect_translations_from_file(path, catalog, seen)
 
     return {key: tuple(values) for key, values in catalog.items()}
+
+
+def translation_roots_for_forms(form_paths: Iterable[Path]) -> tuple[Path, ...]:
+    roots: list[Path] = []
+    seen: set[Path] = set()
+
+    for form_path in form_paths:
+        resources_root = translation_root_for_form(form_path)
+        if resources_root is None or not resources_root.exists():
+            continue
+        resolved = resources_root.resolve()
+        if resolved in seen:
+            continue
+        roots.append(resolved)
+        seen.add(resolved)
+
+    return tuple(roots)
+
+
+def translation_root_for_form(form_path: Path) -> Path | None:
+    resolved = form_path.resolve()
+    for candidate in (resolved.parent, *resolved.parent.parents):
+        if candidate.name != "Forms":
+            continue
+        sources_dir = candidate.parent
+        project_dir = sources_dir.parent
+        if sources_dir.name != "Sources" or project_dir.name != "Project":
+            continue
+        return project_dir.parent / "Resources"
+    return None
 
 
 def _collect_translations_from_file(
