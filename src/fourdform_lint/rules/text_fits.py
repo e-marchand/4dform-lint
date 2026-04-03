@@ -12,16 +12,16 @@ TEXT_FIT_TOLERANCE_PX = 6
 DEFAULT_FONT_SIZE = 13
 SUPPORTED_TEXT_TYPES = {"button", "checkbox", "radio", "text"}
 BUTTON_HORIZONTAL_PADDING = {
-    "regular": 18,
-    "toolbar": 10,
-    "bevel": 14,
-    "roundedBevel": 16,
-    "gradientBevel": 16,
-    "texturedBevel": 16,
-    "office": 14,
-    "help": 4,
-    "circular": 8,
-    "custom": 6,
+    "regular": 8,
+    "toolbar": 2,
+    "bevel": 4,
+    "roundedBevel": 4,
+    "gradientBevel": 4,
+    "texturedBevel": 4,
+    "office": 2,
+    "help": 1,
+    "circular": 2,
+    "custom": 2,
     "flat": 2,
 }
 
