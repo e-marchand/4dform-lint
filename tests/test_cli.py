@@ -321,6 +321,44 @@ class LintCliTests(unittest.TestCase):
             self.assertIn("cancel_button", findings[0]["message"])
             self.assertIn("language 'fr'", findings[0]["message"])
 
+    def test_xliff_target_language_prefers_lproj_folder_when_header_is_wrong(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            form_dir = tmp / "Project" / "Sources" / "Forms" / "LocalizedButton"
+            resources_dir = tmp / "Resources" / "fr.lproj"
+            form_dir.mkdir(parents=True)
+            resources_dir.mkdir(parents=True)
+            form_path = form_dir / "form.4DForm"
+            xlf_path = resources_dir / "translations.fr.xlf"
+            form_path.write_text(
+                (FIXTURES_DIR / "localized-button.form.4DForm").read_text(
+                    encoding="utf-8"
+                ),
+                encoding="utf-8",
+            )
+            xlf_path.write_text(
+                """<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.0">
+  <file source-language="en-US" target-language="en">
+    <body>
+      <trans-unit id="cancel_button">
+        <source>Cancel</source>
+        <target>Annuler la synchronisation</target>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>
+""",
+                encoding="utf-8",
+            )
+            result = run_cli(str(form_path), "--format", "json", cwd=tmp)
+            self.assertEqual(result.returncode, 0)
+            payload = json.loads(result.stdout)
+            findings = payload["files"][0]["findings"]
+            self.assertEqual(len(findings), 1)
+            self.assertIn("language 'fr'", findings[0]["message"])
+            self.assertNotIn("language 'en'", findings[0]["message"])
+
     def test_xliff_only_reports_languages_that_overflow(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp = Path(tmpdir)

@@ -63,7 +63,11 @@ def _collect_translations_from_file(
     except (ElementTree.ParseError, OSError):
         return
 
-    for node, source_language, target_language in _iter_translation_units(root):
+    directory_language = _directory_language(path)
+    for node, source_language, target_language in _iter_translation_units(
+        root,
+        directory_language=directory_language,
+    ):
         keys = [value for value in (node.get("id"), node.get("name"), node.get("resname")) if value]
         if not keys:
             continue
@@ -85,9 +89,11 @@ def _collect_translations_from_file(
 
 def _iter_translation_units(
     root: ElementTree.Element,
+    *,
+    directory_language: str | None,
 ) -> Iterable[tuple[ElementTree.Element, str | None, str | None]]:
     root_source_language = _language_attribute(root, "srcLang", "source-language")
-    root_target_language = _language_attribute(root, "trgLang", "target-language")
+    root_target_language = directory_language or _language_attribute(root, "trgLang", "target-language")
     file_nodes = [node for node in root.iter() if _local_name(node.tag) == "file"]
     if file_nodes:
         for file_node in file_nodes:
@@ -96,7 +102,8 @@ def _iter_translation_units(
                 or root_source_language
             )
             file_target_language = (
-                _language_attribute(file_node, "trgLang", "target-language")
+                directory_language
+                or _language_attribute(file_node, "trgLang", "target-language")
                 or root_target_language
             )
             for node in file_node.iter():
@@ -154,6 +161,14 @@ def _language_attribute(node: ElementTree.Element, *names: str) -> str | None:
             if stripped:
                 return stripped
     return None
+
+
+def _directory_language(path: Path) -> str | None:
+    parent = path.parent
+    if parent.suffix != ".lproj":
+        return None
+    language = parent.stem.strip()
+    return language or None
 
 
 def _normalize_xml_text(value: str) -> str:
