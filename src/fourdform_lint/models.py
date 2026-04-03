@@ -36,6 +36,13 @@ class PageContext:
     elements: list[ElementContext]
 
 
+@dataclass(frozen=True)
+class TranslationText:
+    language: str
+    text: str
+    is_source: bool = False
+
+
 @dataclass
 class FormContext:
     source_path: Path
@@ -43,7 +50,7 @@ class FormContext:
     width: int | None
     height: int | None
     pages: list[PageContext]
-    translations: dict[str, tuple[str, ...]] = field(default_factory=dict)
+    translations: dict[str, tuple[TranslationText, ...]] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

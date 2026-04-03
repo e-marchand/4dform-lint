@@ -96,7 +96,7 @@ def form_from_native(
     source_path: Path,
     display_path: str,
     element_ignores: dict[tuple[int, str], set[str]],
-    translations: dict[str, tuple[str, ...]] | None = None,
+    translations=None,
 ) -> FormContext:
     form_width = document.get("width") if isinstance(document.get("width"), int) else None
     form_height = document.get("height") if isinstance(document.get("height"), int) else None

@@ -260,6 +260,196 @@ class LintCliTests(unittest.TestCase):
             self.assertIn("text_fits", result.stdout)
             self.assertIn("cancel_button", result.stdout)
             self.assertIn("cancelButton", result.stdout)
+            self.assertIn("language 'fr'", result.stdout)
+
+    def test_xliff_resname_and_colon_prefix_are_checked_for_text_fit(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            form_dir = tmp / "Project" / "Sources" / "Forms" / "LocalizedButton"
+            resources_dir = tmp / "Resources" / "fr.lproj"
+            form_dir.mkdir(parents=True)
+            resources_dir.mkdir(parents=True)
+            form_path = form_dir / "form.4DForm"
+            xlf_path = resources_dir / "translations.fr.xlf"
+            form_path.write_text(
+                json.dumps(
+                    {
+                        "$4d": {"version": "1", "kind": "form"},
+                        "destination": "detailScreen",
+                        "windowTitle": "Localized Button",
+                        "width": 320,
+                        "height": 180,
+                        "pages": [
+                            {
+                                "objects": {
+                                    "cancelButton": {
+                                        "type": "button",
+                                        "top": 20,
+                                        "left": 20,
+                                        "width": 100,
+                                        "height": 28,
+                                        "text": ":xliff:cancel_button",
+                                    }
+                                }
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            xlf_path.write_text(
+                """<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2">
+  <file source-language="en" target-language="fr">
+    <body>
+      <trans-unit id="cancel_button_id" resname="cancel_button">
+        <source>Cancel</source>
+        <target>Annuler la synchronisation</target>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>
+""",
+                encoding="utf-8",
+            )
+            result = run_cli(str(form_path), "--format", "json", cwd=tmp)
+            self.assertEqual(result.returncode, 0)
+            payload = json.loads(result.stdout)
+            findings = payload["files"][0]["findings"]
+            self.assertEqual(len(findings), 1)
+            self.assertEqual(findings[0]["rule_id"], "text_fits")
+            self.assertIn("cancel_button", findings[0]["message"])
+            self.assertIn("language 'fr'", findings[0]["message"])
+
+    def test_xliff_only_reports_languages_that_overflow(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            form_dir = tmp / "Project" / "Sources" / "Forms" / "LocalizedButton"
+            fr_resources_dir = tmp / "Resources" / "fr.lproj"
+            de_resources_dir = tmp / "Resources" / "de.lproj"
+            form_dir.mkdir(parents=True)
+            fr_resources_dir.mkdir(parents=True)
+            de_resources_dir.mkdir(parents=True)
+            form_path = form_dir / "form.4DForm"
+            form_path.write_text(
+                (FIXTURES_DIR / "localized-button.form.4DForm").read_text(
+                    encoding="utf-8"
+                ),
+                encoding="utf-8",
+            )
+            (fr_resources_dir / "translations.fr.xlf").write_text(
+                """<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2">
+  <file source-language="en" target-language="fr">
+    <body>
+      <trans-unit id="cancel_button">
+        <source>Cancel</source>
+        <target>Annuler la synchronisation</target>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>
+""",
+                encoding="utf-8",
+            )
+            (de_resources_dir / "translations.de.xlf").write_text(
+                """<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2">
+  <file source-language="en" target-language="de">
+    <body>
+      <trans-unit id="cancel_button">
+        <source>Cancel</source>
+        <target>Abbrechen</target>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>
+""",
+                encoding="utf-8",
+            )
+            result = run_cli(str(form_path), "--format", "json", cwd=tmp)
+            self.assertEqual(result.returncode, 0)
+            payload = json.loads(result.stdout)
+            findings = payload["files"][0]["findings"]
+            self.assertEqual(len(findings), 1)
+            self.assertIn("language 'fr'", findings[0]["message"])
+            self.assertNotIn("language 'de'", findings[0]["message"])
+            self.assertNotIn("language 'en'", findings[0]["message"])
+
+    def test_xliff_source_language_overflow_suppresses_target_language_findings(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            form_dir = tmp / "Project" / "Sources" / "Forms" / "LocalizedButton"
+            fr_resources_dir = tmp / "Resources" / "fr.lproj"
+            de_resources_dir = tmp / "Resources" / "de.lproj"
+            form_dir.mkdir(parents=True)
+            fr_resources_dir.mkdir(parents=True)
+            de_resources_dir.mkdir(parents=True)
+            form_path = form_dir / "form.4DForm"
+            form_path.write_text(
+                json.dumps(
+                    {
+                        "$4d": {"version": "1", "kind": "form"},
+                        "destination": "detailScreen",
+                        "windowTitle": "Localized Button",
+                        "width": 320,
+                        "height": 180,
+                        "pages": [
+                            {
+                                "objects": {
+                                    "cancelButton": {
+                                        "type": "button",
+                                        "top": 20,
+                                        "left": 20,
+                                        "width": 80,
+                                        "height": 28,
+                                        "text": "xliff:cancel_button",
+                                    }
+                                }
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (fr_resources_dir / "translations.fr.xlf").write_text(
+                """<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2">
+  <file source-language="en" target-language="fr">
+    <body>
+      <trans-unit id="cancel_button">
+        <source>Cancel synchronization</source>
+        <target>Annuler la synchronisation</target>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>
+""",
+                encoding="utf-8",
+            )
+            (de_resources_dir / "translations.de.xlf").write_text(
+                """<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2">
+  <file source-language="en" target-language="de">
+    <body>
+      <trans-unit id="cancel_button">
+        <source>Cancel synchronization</source>
+        <target>Synchronisierung abbrechen</target>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>
+""",
+                encoding="utf-8",
+            )
+            result = run_cli(str(form_path), "--format", "json", cwd=tmp)
+            self.assertEqual(result.returncode, 0)
+            payload = json.loads(result.stdout)
+            findings = payload["files"][0]["findings"]
+            self.assertEqual(len(findings), 1)
+            self.assertIn("language 'en'", findings[0]["message"])
+            self.assertNotIn("language 'fr'", findings[0]["message"])
+            self.assertNotIn("language 'de'", findings[0]["message"])
 
     def test_xliff_translation_is_not_loaded_outside_project_sources_forms(self):
         with tempfile.TemporaryDirectory() as tmpdir:

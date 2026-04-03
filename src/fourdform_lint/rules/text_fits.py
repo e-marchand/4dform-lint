@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 import platform
 
-from ..models import Finding, FormContext
+from ..models import Finding, FormContext, TranslationText
 from .base import RuleDefinition, RuleOptions
 from .common import element_ignores_rule
 
@@ -42,10 +42,6 @@ def rule_text_fits(
             if raw_text is None:
                 continue
 
-            text_candidates = _resolved_text_candidates(raw_text, context.translations)
-            if not text_candidates:
-                continue
-
             available_width = _available_text_width(element)
             if available_width <= 0:
                 continue
@@ -55,47 +51,63 @@ def rule_text_fits(
             font_weight = _font_weight(element)
             font_style = _font_style(element)
 
-            widest_text = ""
-            widest_width = 0.0
-            for candidate in text_candidates:
-                width = estimate_text_width(
-                    candidate,
+            xliff_key = _xliff_key(raw_text)
+            if xliff_key is None:
+                widest_width = estimate_text_width(
+                    raw_text,
                     font_size=font_size,
                     font_family=font_family,
                     font_weight=font_weight,
                     font_style=font_style,
                 )
-                if width > widest_width:
-                    widest_width = width
-                    widest_text = candidate
-
-            if widest_width <= available_width + TEXT_FIT_TOLERANCE_PX:
-                continue
-
-            if _is_xliff_reference(raw_text):
-                xliff_key = raw_text.split(":", 1)[1]
+                if widest_width <= available_width + TEXT_FIT_TOLERANCE_PX:
+                    continue
                 message = (
-                    f"Element '{element.element_id}' may crop text: longest XLIFF translation for "
-                    f"'{xliff_key}' needs about {math.ceil(widest_width)} px, but only "
-                    f"{available_width} px are available after intrinsic padding"
-                )
-            else:
-                message = (
-                    f"Element '{element.element_id}' may crop text {_preview_text(widest_text)}: "
+                    f"Element '{element.element_id}' may crop text {_preview_text(raw_text)}: "
                     f"needs about {math.ceil(widest_width)} px, but only {available_width} px "
                     f"are available after intrinsic padding"
                 )
-
-            findings.append(
-                Finding(
-                    file_path=context.display_path,
-                    rule_id="text_fits",
-                    severity=severity,
-                    message=message,
-                    page_index=page.index,
-                    element_ids=(element.element_id,),
+                findings.append(
+                    Finding(
+                        file_path=context.display_path,
+                        rule_id="text_fits",
+                        severity=severity,
+                        message=message,
+                        page_index=page.index,
+                        element_ids=(element.element_id,),
+                    )
                 )
+                continue
+
+            translation_candidates = context.translations.get(xliff_key, ())
+            if not translation_candidates:
+                continue
+
+            failing_candidates = _failing_translation_candidates(
+                translation_candidates,
+                available_width=available_width,
+                font_size=font_size,
+                font_family=font_family,
+                font_weight=font_weight,
+                font_style=font_style,
             )
+            for candidate, width in failing_candidates:
+                findings.append(
+                    Finding(
+                        file_path=context.display_path,
+                        rule_id="text_fits",
+                        severity=severity,
+                        message=(
+                            f"Element '{element.element_id}' may crop XLIFF text for "
+                            f"'{xliff_key}' in language '{candidate.language}' "
+                            f"{_preview_text(candidate.text)}: needs about "
+                            f"{math.ceil(width)} px, but only {available_width} px are "
+                            f"available after intrinsic padding"
+                        ),
+                        page_index=page.index,
+                        element_ids=(element.element_id,),
+                    )
+                )
     return findings
 
 
@@ -141,18 +153,55 @@ def _element_text(element) -> str | None:
     return stripped or None
 
 
-def _resolved_text_candidates(
-    raw_text: str,
-    translations: dict[str, tuple[str, ...]],
-) -> list[str]:
-    if _is_xliff_reference(raw_text):
-        key = raw_text.split(":", 1)[1]
-        return [value for value in translations.get(key, ()) if value]
-    return [raw_text]
+def _failing_translation_candidates(
+    candidates: tuple[TranslationText, ...],
+    *,
+    available_width: int,
+    font_size: int,
+    font_family: str | None,
+    font_weight: str | None,
+    font_style: str | None,
+) -> list[tuple[TranslationText, float]]:
+    failing_by_language: dict[str, tuple[TranslationText, float]] = {}
+
+    for candidate in candidates:
+        width = estimate_text_width(
+            candidate.text,
+            font_size=font_size,
+            font_family=font_family,
+            font_weight=font_weight,
+            font_style=font_style,
+        )
+        if width <= available_width + TEXT_FIT_TOLERANCE_PX:
+            continue
+        current = failing_by_language.get(candidate.language)
+        if current is None or width > current[1]:
+            failing_by_language[candidate.language] = (candidate, width)
+
+    if not failing_by_language:
+        return []
+
+    source_failures = [
+        item for item in failing_by_language.values() if item[0].is_source
+    ]
+    if source_failures:
+        return sorted(source_failures, key=lambda item: (-item[1], item[0].language))
+
+    return sorted(failing_by_language.values(), key=lambda item: item[0].language)
 
 
 def _is_xliff_reference(value: str) -> bool:
-    return value.lower().startswith("xliff:")
+    return _xliff_key(value) is not None
+
+
+def _xliff_key(value: str) -> str | None:
+    stripped = value.strip()
+    lowered = stripped.lower()
+    for prefix in (":xliff:", "xliff:"):
+        if lowered.startswith(prefix):
+            key = stripped[len(prefix):].strip()
+            return key or None
+    return None
 
 
 def _available_text_width(element) -> int:

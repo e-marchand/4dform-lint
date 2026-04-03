@@ -66,7 +66,7 @@ def lint_file(
     path: Path,
     loaded_config: LoadedConfig,
     cwd: Path,
-    translations: dict[str, tuple[str, ...]] | None = None,
+    translations=None,
     *,
     excluded_rules: tuple[str, ...] = (),
 ) -> list[Finding]:
