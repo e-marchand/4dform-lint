@@ -13,8 +13,10 @@ from .rules import (
     rule_inside_bounds,
     rule_no_overlap,
     rule_shared_page_required,
+    rule_text_fits,
 )
 from .schema import load_native_form, validate_native_form
+from .xliff import load_translation_catalog
 
 
 class UsageError(ValueError):
@@ -46,13 +48,19 @@ def display_path(path: Path, cwd: Path) -> str:
 
 
 def lint_paths(paths: list[Path], loaded_config: LoadedConfig, cwd: Path) -> list[Finding]:
+    translations = load_translation_catalog(cwd)
     findings: list[Finding] = []
     for path in paths:
-        findings.extend(lint_file(path, loaded_config, cwd))
+        findings.extend(lint_file(path, loaded_config, cwd, translations))
     return findings
 
 
-def lint_file(path: Path, loaded_config: LoadedConfig, cwd: Path) -> list[Finding]:
+def lint_file(
+    path: Path,
+    loaded_config: LoadedConfig,
+    cwd: Path,
+    translations: dict[str, tuple[str, ...]] | None = None,
+) -> list[Finding]:
     path_display = display_path(path, cwd)
     effective_config = effective_config_for(path, loaded_config)
 
@@ -95,6 +103,7 @@ def lint_file(path: Path, loaded_config: LoadedConfig, cwd: Path) -> list[Findin
             source_path=path,
             display_path=path_display,
             element_ignores=effective_config.element_ignores,
+            translations=translations,
         )
     except (KeyError, TypeError, ValueError) as exc:
         return [
@@ -125,4 +134,6 @@ def run_rules(context, effective_config: EffectiveConfig) -> list[Finding]:
             )
         elif rule_id == "alignment_consistency":
             findings.extend(rule_alignment_consistency(context, severity))
+        elif rule_id == "text_fits":
+            findings.extend(rule_text_fits(context, severity))
     return findings

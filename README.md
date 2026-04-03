@@ -24,6 +24,7 @@ rules:
   consistent_spacing: warning
   alignment_consistency: warning
   shared_page_required: off
+  text_fits: warning
 
 defaults:
   spacing:
@@ -37,4 +38,7 @@ defaults:
   - `below(...)` and `above(...)` compare left edges.
   - `rightOf(...)` and `leftOf(...)` compare top edges.
 - Alignment warnings include the pixel delta and direction, for example `left edge is 16 px to the right` or `top edge is 2 px higher`.
+- `text_fits` estimates one-line text width for native `button`, `checkbox`, `radio`, and `text` objects, subtracting intrinsic control padding before checking whether the title is likely cropped.
+- `text_fits` uses each object's explicit font settings when present and falls back to the platform default font profile otherwise.
+- If an object's text is `xliff:KEY`, `text_fits` scans `.xlf` and `.xliff` files under the lint working directory and checks the longest matching translation variant it can find.
 - If a layout is intentional, suppress a rule for a specific element with `ignore_rules`.

@@ -14,6 +14,7 @@ VALID_RULE_IDS = {
     "consistent_spacing",
     "alignment_consistency",
     "shared_page_required",
+    "text_fits",
 }
 VALID_SEVERITIES = {"off", "warning", "error"}
 DEFAULT_RULES = {
@@ -22,6 +23,7 @@ DEFAULT_RULES = {
     "consistent_spacing": "warning",
     "alignment_consistency": "warning",
     "shared_page_required": "off",
+    "text_fits": "warning",
 }
 DEFAULT_ALLOWED_SPACING = [4, 8, 10, 12, 16, 24]
 

@@ -25,6 +25,7 @@ class ElementContext:
     element_id: str
     element_type: str
     frame: Frame
+    native_object: dict[str, object] = field(default_factory=dict)
     ignores: set[str] = field(default_factory=set)
     placement: str | None = None
 
@@ -42,6 +43,7 @@ class FormContext:
     width: int | None
     height: int | None
     pages: list[PageContext]
+    translations: dict[str, tuple[str, ...]] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

@@ -96,6 +96,7 @@ def form_from_native(
     source_path: Path,
     display_path: str,
     element_ignores: dict[tuple[int, str], set[str]],
+    translations: dict[str, tuple[str, ...]] | None = None,
 ) -> FormContext:
     form_width = document.get("width") if isinstance(document.get("width"), int) else None
     form_height = document.get("height") if isinstance(document.get("height"), int) else None
@@ -119,6 +120,7 @@ def form_from_native(
                 element_id=element_id,
                 element_type=str(native_object["type"]),
                 frame=frame,
+                native_object=dict(native_object),
                 ignores=set(element_ignores.get((page_index, element_id), set())),
                 placement=infer_relations(frame, previous_elements, form_width, form_height),
             )
@@ -133,4 +135,5 @@ def form_from_native(
         width=form_width,
         height=form_height,
         pages=pages,
+        translations=dict(translations or {}),
     )

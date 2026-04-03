@@ -59,6 +59,86 @@ class LintCliTests(unittest.TestCase):
         self.assertIn("alignment_consistency", result.stdout)
         self.assertIn("left edge is 16 px to the right", result.stdout)
 
+    def test_button_text_overflow_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            form_path = tmp / "cropped-button.form.4DForm"
+            form_path.write_text(
+                json.dumps(
+                    {
+                        "$4d": {"version": "1", "kind": "form"},
+                        "destination": "detailScreen",
+                        "windowTitle": "Cropped Button",
+                        "width": 320,
+                        "height": 180,
+                        "pages": [
+                            {
+                                "objects": {
+                                    "saveButton": {
+                                        "type": "button",
+                                        "top": 20,
+                                        "left": 20,
+                                        "width": 110,
+                                        "height": 28,
+                                        "text": "Synchronize everything",
+                                    }
+                                }
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result = run_cli(str(form_path))
+            self.assertEqual(result.returncode, 0)
+            self.assertIn("text_fits", result.stdout)
+            self.assertIn("saveButton", result.stdout)
+
+    def test_font_size_is_used_when_checking_text_fit(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            form_path = tmp / "font-size-text-fit.form.4DForm"
+            form_path.write_text(
+                json.dumps(
+                    {
+                        "$4d": {"version": "1", "kind": "form"},
+                        "destination": "detailScreen",
+                        "windowTitle": "Font Size Text Fit",
+                        "width": 320,
+                        "height": 220,
+                        "pages": [
+                            {
+                                "objects": {
+                                    "defaultButton": {
+                                        "type": "button",
+                                        "top": 20,
+                                        "left": 20,
+                                        "width": 120,
+                                        "height": 28,
+                                        "text": "Preferences",
+                                    },
+                                    "largeTextButton": {
+                                        "type": "button",
+                                        "top": 60,
+                                        "left": 20,
+                                        "width": 120,
+                                        "height": 28,
+                                        "text": "Preferences",
+                                        "fontSize": 22,
+                                    },
+                                }
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result = run_cli(str(form_path))
+            self.assertEqual(result.returncode, 0)
+            self.assertIn("text_fits", result.stdout)
+            self.assertIn("largeTextButton", result.stdout)
+            self.assertNotIn("defaultButton", result.stdout)
+
     def test_horizontal_alignment_warning_reports_top_delta(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp = Path(tmpdir)
@@ -200,6 +280,58 @@ class LintCliTests(unittest.TestCase):
             result = run_cli(str(form_path))
             self.assertEqual(result.returncode, 0)
             self.assertIn("No findings", result.stdout)
+
+    def test_xliff_translation_is_checked_for_text_fit(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            form_path = tmp / "localized-button.form.4DForm"
+            xlf_path = tmp / "translations.fr.xlf"
+            form_path.write_text(
+                json.dumps(
+                    {
+                        "$4d": {"version": "1", "kind": "form"},
+                        "destination": "detailScreen",
+                        "windowTitle": "Localized Button",
+                        "width": 320,
+                        "height": 180,
+                        "pages": [
+                            {
+                                "objects": {
+                                    "cancelButton": {
+                                        "type": "button",
+                                        "top": 20,
+                                        "left": 20,
+                                        "width": 100,
+                                        "height": 28,
+                                        "text": "xliff:cancel_button",
+                                    }
+                                }
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            xlf_path.write_text(
+                """<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2">
+  <file source-language="en" target-language="fr">
+    <body>
+      <trans-unit id="cancel_button">
+        <source>Cancel</source>
+        <target>Annuler la synchronisation</target>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>
+""",
+                encoding="utf-8",
+            )
+            result = run_cli(str(form_path), cwd=tmp)
+            self.assertEqual(result.returncode, 0)
+            self.assertIn("text_fits", result.stdout)
+            self.assertIn("cancel_button", result.stdout)
+            self.assertIn("cancelButton", result.stdout)
 
     def test_invalid_json_is_reported_as_finding(self):
         result = run_cli(str(FIXTURES_DIR / "invalid-json.form.4DForm"), check=False)
