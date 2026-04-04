@@ -24,6 +24,7 @@ rules:
   consistent_spacing: warning
   alignment_consistency: warning
   events_required_for_method: warning
+  object_onLoad_onUnload_requires_form_level: warning
   shared_page_required: off
   text_fits: warning
 
@@ -39,6 +40,7 @@ defaults:
 - [`consistent_spacing`](docs/rules/consistent_spacing.md): checks nearby aligned gaps against the configured spacing scale.
 - [`alignment_consistency`](docs/rules/alignment_consistency.md): validates inferred placement alignment between related controls.
 - [`events_required_for_method`](docs/rules/events_required_for_method.md): warns when an object method is configured without the events needed to trigger it.
+- [`object_onLoad_onUnload_requires_form_level`](docs/rules/object_onLoad_onUnload_requires_form_level.md): warns when an object enables `onLoad` or `onUnload` without the matching form-level event.
 - [`shared_page_required`](docs/rules/shared_page_required.md): optionally enforces the shared page `0` plus visible page `1` convention.
 - [`text_fits`](docs/rules/text_fits.md): estimates whether native one-line control text is likely to be cropped.
 

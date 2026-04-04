@@ -11,6 +11,12 @@ from .inside_bounds import RULE as INSIDE_BOUNDS_RULE
 from .inside_bounds import rule_inside_bounds
 from .no_overlap import RULE as NO_OVERLAP_RULE
 from .no_overlap import rule_no_overlap
+from .object_onLoad_onUnload_requires_form_level import (
+    RULE as OBJECT_ONLOAD_ONUNLOAD_REQUIRES_FORM_LEVEL_RULE,
+)
+from .object_onLoad_onUnload_requires_form_level import (
+    rule_object_onLoad_onUnload_requires_form_level,
+)
 from .shared_page_required import RULE as SHARED_PAGE_REQUIRED_RULE
 from .shared_page_required import rule_shared_page_required
 from .text_fits import RULE as TEXT_FITS_RULE
@@ -23,6 +29,7 @@ RULE_DEFINITIONS: tuple[RuleDefinition, ...] = (
     CONSISTENT_SPACING_RULE,
     ALIGNMENT_CONSISTENCY_RULE,
     EVENTS_REQUIRED_FOR_METHOD_RULE,
+    OBJECT_ONLOAD_ONUNLOAD_REQUIRES_FORM_LEVEL_RULE,
     SHARED_PAGE_REQUIRED_RULE,
     TEXT_FITS_RULE,
 )
@@ -45,6 +52,7 @@ __all__ = [
     "rule_events_required_for_method",
     "rule_inside_bounds",
     "rule_no_overlap",
+    "rule_object_onLoad_onUnload_requires_form_level",
     "rule_shared_page_required",
     "rule_text_fits",
 ]

@@ -91,6 +91,15 @@ def placement_relation(placement: str | None) -> tuple[str, str] | None:
     return relation, target.strip()
 
 
+def native_event_names(native_object: dict[str, object]) -> set[str]:
+    raw_events = native_object.get("events")
+    if isinstance(raw_events, dict):
+        raw_events = raw_events.get("events")
+    if not isinstance(raw_events, list):
+        return set()
+    return {event for event in raw_events if isinstance(event, str) and event.strip()}
+
+
 def form_from_native(
     document: dict,
     source_path: Path,
@@ -135,5 +144,6 @@ def form_from_native(
         width=form_width,
         height=form_height,
         pages=pages,
+        form_events=native_event_names(document),
         translations=dict(translations or {}),
     )

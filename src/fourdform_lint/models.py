@@ -50,6 +50,7 @@ class FormContext:
     width: int | None
     height: int | None
     pages: list[PageContext]
+    form_events: set[str] = field(default_factory=set)
     translations: dict[str, tuple[TranslationText, ...]] = field(default_factory=dict)
 
 

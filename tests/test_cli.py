@@ -184,6 +184,115 @@ class LintCliTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0)
             self.assertIn("No findings", result.stdout)
 
+    def test_object_onload_requires_form_level_event(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            form_path = tmp / "object-onload-without-form-event.form.4DForm"
+            form_path.write_text(
+                json.dumps(
+                    {
+                        "$4d": {"version": "1", "kind": "form"},
+                        "destination": "detailScreen",
+                        "windowTitle": "Object On Load Without Form Event",
+                        "width": 320,
+                        "height": 180,
+                        "pages": [
+                            {
+                                "objects": {
+                                    "nameField": {
+                                        "type": "input",
+                                        "top": 20,
+                                        "left": 20,
+                                        "width": 160,
+                                        "height": 24,
+                                        "events": ["onLoad"],
+                                    }
+                                }
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result = run_cli(str(form_path))
+            self.assertEqual(result.returncode, 0)
+            self.assertIn("object_onLoad_onUnload_requires_form_level", result.stdout)
+            self.assertIn("nameField", result.stdout)
+            self.assertIn("enables onLoad but the form does not", result.stdout)
+
+    def test_object_onunload_requires_matching_form_level_event(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            form_path = tmp / "object-onunload-with-partial-form-events.form.4DForm"
+            form_path.write_text(
+                json.dumps(
+                    {
+                        "$4d": {"version": "1", "kind": "form"},
+                        "destination": "detailScreen",
+                        "windowTitle": "Object On Unload Without Form Event",
+                        "width": 320,
+                        "height": 180,
+                        "events": ["onLoad"],
+                        "pages": [
+                            {
+                                "objects": {
+                                    "nameField": {
+                                        "type": "input",
+                                        "top": 20,
+                                        "left": 20,
+                                        "width": 160,
+                                        "height": 24,
+                                        "events": ["onLoad", "onUnload"],
+                                    }
+                                }
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result = run_cli(str(form_path))
+            self.assertEqual(result.returncode, 0)
+            self.assertIn("object_onLoad_onUnload_requires_form_level", result.stdout)
+            self.assertIn("nameField", result.stdout)
+            self.assertIn("enables onUnload but the form does not", result.stdout)
+            self.assertNotIn("enables onLoad but the form does not", result.stdout)
+
+    def test_object_lifecycle_events_pass_when_form_enables_them(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            form_path = tmp / "object-lifecycle-events-with-form-events.form.4DForm"
+            form_path.write_text(
+                json.dumps(
+                    {
+                        "$4d": {"version": "1", "kind": "form"},
+                        "destination": "detailScreen",
+                        "windowTitle": "Object Lifecycle Events With Form Events",
+                        "width": 320,
+                        "height": 180,
+                        "events": ["onLoad", "onUnload"],
+                        "pages": [
+                            {
+                                "objects": {
+                                    "nameField": {
+                                        "type": "input",
+                                        "top": 20,
+                                        "left": 20,
+                                        "width": 160,
+                                        "height": 24,
+                                        "events": ["onLoad", "onUnload"],
+                                    }
+                                }
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result = run_cli(str(form_path))
+            self.assertEqual(result.returncode, 0)
+            self.assertIn("No findings", result.stdout)
+
     def test_font_size_is_used_when_checking_text_fit(self):
         result = run_cli(str(FIXTURES_DIR / "font-size-text-fit.form.4DForm"))
         self.assertEqual(result.returncode, 0)
