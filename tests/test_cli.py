@@ -232,6 +232,167 @@ class LintCliTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0)
             self.assertIn("No findings", result.stdout)
 
+    def test_form_local_object_method_file_must_exist(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            form_dir = tmp / "Project" / "Sources" / "Forms" / "Formulaire1"
+            form_dir.mkdir(parents=True)
+            form_path = form_dir / "form.4DForm"
+            form_path.write_text(
+                json.dumps(
+                    {
+                        "$4d": {"version": "1", "kind": "form"},
+                        "destination": "detailScreen",
+                        "windowTitle": "Missing Form Local Method File",
+                        "width": 320,
+                        "height": 180,
+                        "pages": [
+                            {
+                                "objects": {
+                                    "Bouton": {
+                                        "type": "button",
+                                        "top": 20,
+                                        "left": 20,
+                                        "width": 120,
+                                        "height": 28,
+                                        "text": "Button",
+                                        "events": ["onClick"],
+                                        "method": "ObjectMethods/Bouton.4dm",
+                                    }
+                                }
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result = run_cli(str(form_path), cwd=tmp, check=False)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("object_method_file_exists", result.stdout)
+            self.assertIn("ObjectMethods/Bouton.4dm", result.stdout)
+            self.assertIn("does not exist", result.stdout)
+
+    def test_existing_form_local_object_method_file_passes(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            form_dir = tmp / "Project" / "Sources" / "Forms" / "Formulaire1"
+            method_dir = form_dir / "ObjectMethods"
+            method_dir.mkdir(parents=True)
+            (method_dir / "Bouton.4dm").write_text("// object method\n", encoding="utf-8")
+            form_path = form_dir / "form.4DForm"
+            form_path.write_text(
+                json.dumps(
+                    {
+                        "$4d": {"version": "1", "kind": "form"},
+                        "destination": "detailScreen",
+                        "windowTitle": "Existing Form Local Method File",
+                        "width": 320,
+                        "height": 180,
+                        "pages": [
+                            {
+                                "objects": {
+                                    "Bouton": {
+                                        "type": "button",
+                                        "top": 20,
+                                        "left": 20,
+                                        "width": 120,
+                                        "height": 28,
+                                        "text": "Button",
+                                        "events": ["onClick"],
+                                        "method": "ObjectMethods/Bouton.4dm",
+                                    }
+                                }
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result = run_cli(str(form_path), cwd=tmp)
+            self.assertEqual(result.returncode, 0)
+            self.assertIn("No findings", result.stdout)
+
+    def test_bare_object_method_is_checked_against_project_methods(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            form_dir = tmp / "Project" / "Sources" / "Forms" / "Formulaire1"
+            methods_dir = tmp / "Project" / "Sources" / "Methods"
+            form_dir.mkdir(parents=True)
+            methods_dir.mkdir(parents=True)
+            (methods_dir / "Test.4dm").write_text("// project method\n", encoding="utf-8")
+            form_path = form_dir / "form.4DForm"
+            form_path.write_text(
+                json.dumps(
+                    {
+                        "$4d": {"version": "1", "kind": "form"},
+                        "destination": "detailScreen",
+                        "windowTitle": "Bare Project Method",
+                        "width": 320,
+                        "height": 180,
+                        "pages": [
+                            {
+                                "objects": {
+                                    "Bouton1": {
+                                        "type": "button",
+                                        "top": 20,
+                                        "left": 20,
+                                        "width": 120,
+                                        "height": 28,
+                                        "text": "Button",
+                                        "events": ["onClick"],
+                                        "method": "Test",
+                                    }
+                                }
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result = run_cli(str(form_path), cwd=tmp)
+            self.assertEqual(result.returncode, 0)
+            self.assertIn("No findings", result.stdout)
+
+    def test_missing_bare_object_method_is_reported_as_warning(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            form_dir = tmp / "Project" / "Sources" / "Forms" / "Formulaire1"
+            form_dir.mkdir(parents=True)
+            form_path = form_dir / "form.4DForm"
+            form_path.write_text(
+                json.dumps(
+                    {
+                        "$4d": {"version": "1", "kind": "form"},
+                        "destination": "detailScreen",
+                        "windowTitle": "Missing Bare Project Method",
+                        "width": 320,
+                        "height": 180,
+                        "pages": [
+                            {
+                                "objects": {
+                                    "Bouton1": {
+                                        "type": "button",
+                                        "top": 20,
+                                        "left": 20,
+                                        "width": 120,
+                                        "height": 28,
+                                        "text": "Button",
+                                        "events": ["onClick"],
+                                        "method": "Test",
+                                    }
+                                }
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result = run_cli(str(form_path), cwd=tmp)
+            self.assertEqual(result.returncode, 0)
+            self.assertIn("object_method_project_method_exists", result.stdout)
+            self.assertIn("Project/Sources/Methods/Test.4dm", result.stdout)
+            self.assertIn("another project or component", result.stdout)
+
     def test_object_onload_requires_form_level_event(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp = Path(tmpdir)

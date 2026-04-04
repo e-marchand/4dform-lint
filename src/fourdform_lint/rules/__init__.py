@@ -11,6 +11,12 @@ from .inside_bounds import RULE as INSIDE_BOUNDS_RULE
 from .inside_bounds import rule_inside_bounds
 from .no_overlap import RULE as NO_OVERLAP_RULE
 from .no_overlap import rule_no_overlap
+from .object_method_file_exists import RULE as OBJECT_METHOD_FILE_EXISTS_RULE
+from .object_method_file_exists import rule_object_method_file_exists
+from .object_method_project_method_exists import (
+    RULE as OBJECT_METHOD_PROJECT_METHOD_EXISTS_RULE,
+)
+from .object_method_project_method_exists import rule_object_method_project_method_exists
 from .object_onLoad_onUnload_requires_form_level import (
     RULE as OBJECT_ONLOAD_ONUNLOAD_REQUIRES_FORM_LEVEL_RULE,
 )
@@ -31,6 +37,8 @@ RULE_DEFINITIONS: tuple[RuleDefinition, ...] = (
     CONSISTENT_SPACING_RULE,
     ALIGNMENT_CONSISTENCY_RULE,
     EVENTS_REQUIRED_FOR_METHOD_RULE,
+    OBJECT_METHOD_FILE_EXISTS_RULE,
+    OBJECT_METHOD_PROJECT_METHOD_EXISTS_RULE,
     OBJECT_ONLOAD_ONUNLOAD_REQUIRES_FORM_LEVEL_RULE,
     PAGE0_CROSS_PAGE_OVERLAP_RULE,
     SHARED_PAGE_REQUIRED_RULE,
@@ -55,6 +63,8 @@ __all__ = [
     "rule_events_required_for_method",
     "rule_inside_bounds",
     "rule_no_overlap",
+    "rule_object_method_file_exists",
+    "rule_object_method_project_method_exists",
     "rule_object_onLoad_onUnload_requires_form_level",
     "rule_page0_cross_page_overlap",
     "rule_shared_page_required",

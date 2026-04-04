@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from ..models import Finding, FormContext
 from .base import RuleDefinition, RuleOptions
-from .common import element_ignores_rule, native_event_names
+from .common import element_ignores_rule, native_event_names, object_method_name
 
 
 CLICKABLE_TYPES = {"button", "checkbox", "radio"}
@@ -21,7 +21,7 @@ def rule_events_required_for_method(
             if element_ignores_rule(element.ignores, "events_required_for_method"):
                 continue
 
-            method = _method_name(element.native_object)
+            method = object_method_name(element.native_object)
             if method is None:
                 continue
 
@@ -58,14 +58,6 @@ def rule_events_required_for_method(
                 )
 
     return findings
-
-
-def _method_name(native_object: dict[str, object]) -> str | None:
-    value = native_object.get("method")
-    if not isinstance(value, str):
-        return None
-    stripped = value.strip()
-    return stripped or None
 
 
 RULE = RuleDefinition(
