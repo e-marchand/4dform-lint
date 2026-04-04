@@ -23,6 +23,7 @@ rules:
   inside_bounds: error
   consistent_spacing: warning
   alignment_consistency: warning
+  events_required_for_method: warning
   shared_page_required: off
   text_fits: warning
 
@@ -37,6 +38,7 @@ defaults:
 - [`inside_bounds`](docs/rules/inside_bounds.md): ensures elements stay within the root form bounds.
 - [`consistent_spacing`](docs/rules/consistent_spacing.md): checks nearby aligned gaps against the configured spacing scale.
 - [`alignment_consistency`](docs/rules/alignment_consistency.md): validates inferred placement alignment between related controls.
+- [`events_required_for_method`](docs/rules/events_required_for_method.md): warns when an object method is configured without the events needed to trigger it.
 - [`shared_page_required`](docs/rules/shared_page_required.md): optionally enforces the shared page `0` plus visible page `1` convention.
 - [`text_fits`](docs/rules/text_fits.md): estimates whether native one-line control text is likely to be cropped.
 

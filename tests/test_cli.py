@@ -74,6 +74,116 @@ class LintCliTests(unittest.TestCase):
         self.assertIn("text_fits", result.stdout)
         self.assertIn("saveButton", result.stdout)
 
+    def test_method_without_events_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            form_path = tmp / "method-without-events.form.4DForm"
+            form_path.write_text(
+                json.dumps(
+                    {
+                        "$4d": {"version": "1", "kind": "form"},
+                        "destination": "detailScreen",
+                        "windowTitle": "Method Without Events",
+                        "width": 320,
+                        "height": 180,
+                        "pages": [
+                            {
+                                "objects": {
+                                    "nameField": {
+                                        "type": "input",
+                                        "top": 20,
+                                        "left": 20,
+                                        "width": 160,
+                                        "height": 24,
+                                        "method": "handleNameField",
+                                    }
+                                }
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result = run_cli(str(form_path))
+            self.assertEqual(result.returncode, 0)
+            self.assertIn("events_required_for_method", result.stdout)
+            self.assertIn("handleNameField", result.stdout)
+            self.assertIn("nameField", result.stdout)
+
+    def test_clickable_method_without_onclick_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            form_path = tmp / "button-without-onclick.form.4DForm"
+            form_path.write_text(
+                json.dumps(
+                    {
+                        "$4d": {"version": "1", "kind": "form"},
+                        "destination": "detailScreen",
+                        "windowTitle": "Button Without On Click",
+                        "width": 320,
+                        "height": 180,
+                        "pages": [
+                            {
+                                "objects": {
+                                    "saveButton": {
+                                        "type": "button",
+                                        "top": 20,
+                                        "left": 20,
+                                        "width": 120,
+                                        "height": 28,
+                                        "text": "Save",
+                                        "method": "handleSaveButton",
+                                        "events": ["onLoad"],
+                                    }
+                                }
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result = run_cli(str(form_path))
+            self.assertEqual(result.returncode, 0)
+            self.assertIn("events_required_for_method", result.stdout)
+            self.assertIn("saveButton", result.stdout)
+            self.assertIn("does not enable onClick", result.stdout)
+
+    def test_clickable_method_with_onclick_passes(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            form_path = tmp / "button-with-onclick.form.4DForm"
+            form_path.write_text(
+                json.dumps(
+                    {
+                        "$4d": {"version": "1", "kind": "form"},
+                        "destination": "detailScreen",
+                        "windowTitle": "Button With On Click",
+                        "width": 320,
+                        "height": 180,
+                        "pages": [
+                            {
+                                "objects": {
+                                    "saveButton": {
+                                        "type": "button",
+                                        "top": 20,
+                                        "left": 20,
+                                        "width": 120,
+                                        "height": 28,
+                                        "text": "Save",
+                                        "method": "handleSaveButton",
+                                        "events": ["onClick"],
+                                    }
+                                }
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result = run_cli(str(form_path))
+            self.assertEqual(result.returncode, 0)
+            self.assertIn("No findings", result.stdout)
+
     def test_font_size_is_used_when_checking_text_fit(self):
         result = run_cli(str(FIXTURES_DIR / "font-size-text-fit.form.4DForm"))
         self.assertEqual(result.returncode, 0)

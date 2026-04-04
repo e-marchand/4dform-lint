@@ -5,6 +5,8 @@ from .alignment_consistency import rule_alignment_consistency
 from .base import RuleDefinition, RuleOptions
 from .consistent_spacing import RULE as CONSISTENT_SPACING_RULE
 from .consistent_spacing import rule_consistent_spacing
+from .events_required_for_method import RULE as EVENTS_REQUIRED_FOR_METHOD_RULE
+from .events_required_for_method import rule_events_required_for_method
 from .inside_bounds import RULE as INSIDE_BOUNDS_RULE
 from .inside_bounds import rule_inside_bounds
 from .no_overlap import RULE as NO_OVERLAP_RULE
@@ -20,6 +22,7 @@ RULE_DEFINITIONS: tuple[RuleDefinition, ...] = (
     INSIDE_BOUNDS_RULE,
     CONSISTENT_SPACING_RULE,
     ALIGNMENT_CONSISTENCY_RULE,
+    EVENTS_REQUIRED_FOR_METHOD_RULE,
     SHARED_PAGE_REQUIRED_RULE,
     TEXT_FITS_RULE,
 )
@@ -39,6 +42,7 @@ __all__ = [
     "estimate_text_width",
     "rule_alignment_consistency",
     "rule_consistent_spacing",
+    "rule_events_required_for_method",
     "rule_inside_bounds",
     "rule_no_overlap",
     "rule_shared_page_required",
