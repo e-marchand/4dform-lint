@@ -17,6 +17,8 @@ from .object_onLoad_onUnload_requires_form_level import (
 from .object_onLoad_onUnload_requires_form_level import (
     rule_object_onLoad_onUnload_requires_form_level,
 )
+from .page0_cross_page_overlap import RULE as PAGE0_CROSS_PAGE_OVERLAP_RULE
+from .page0_cross_page_overlap import rule_page0_cross_page_overlap
 from .shared_page_required import RULE as SHARED_PAGE_REQUIRED_RULE
 from .shared_page_required import rule_shared_page_required
 from .text_fits import RULE as TEXT_FITS_RULE
@@ -30,6 +32,7 @@ RULE_DEFINITIONS: tuple[RuleDefinition, ...] = (
     ALIGNMENT_CONSISTENCY_RULE,
     EVENTS_REQUIRED_FOR_METHOD_RULE,
     OBJECT_ONLOAD_ONUNLOAD_REQUIRES_FORM_LEVEL_RULE,
+    PAGE0_CROSS_PAGE_OVERLAP_RULE,
     SHARED_PAGE_REQUIRED_RULE,
     TEXT_FITS_RULE,
 )
@@ -53,6 +56,7 @@ __all__ = [
     "rule_inside_bounds",
     "rule_no_overlap",
     "rule_object_onLoad_onUnload_requires_form_level",
+    "rule_page0_cross_page_overlap",
     "rule_shared_page_required",
     "rule_text_fits",
 ]

@@ -4,7 +4,7 @@ from itertools import combinations
 
 from ..models import Finding, FormContext
 from .base import RuleDefinition, RuleOptions
-from .common import element_ignores_rule
+from .common import element_ignores_rule, frames_intersect
 
 
 def rule_no_overlap(
@@ -20,13 +20,7 @@ def rule_no_overlap(
                 second.ignores, "no_overlap"
             ):
                 continue
-            intersects = (
-                first.frame.left < second.frame.right
-                and first.frame.right > second.frame.left
-                and first.frame.top < second.frame.bottom
-                and first.frame.bottom > second.frame.top
-            )
-            if intersects:
+            if frames_intersect(first.frame, second.frame):
                 findings.append(
                     Finding(
                         file_path=context.display_path,

@@ -42,6 +42,54 @@ class LintCliTests(unittest.TestCase):
         self.assertIn("fieldWhenVisible", result.stdout)
         self.assertIn("fieldWhenHidden", result.stdout)
 
+    def test_page0_cross_page_overlap_is_reported_as_warning(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            form_path = tmp / "page0-overlap.form.4DForm"
+            form_path.write_text(
+                json.dumps(
+                    {
+                        "$4d": {"version": "1", "kind": "form"},
+                        "destination": "detailScreen",
+                        "windowTitle": "Page 0 Overlap",
+                        "width": 320,
+                        "height": 180,
+                        "pages": [
+                            {
+                                "objects": {
+                                    "sharedBanner": {
+                                        "type": "button",
+                                        "top": 20,
+                                        "left": 20,
+                                        "width": 160,
+                                        "height": 28,
+                                        "text": "Shared",
+                                    }
+                                }
+                            },
+                            {
+                                "objects": {
+                                    "contentField": {
+                                        "type": "input",
+                                        "top": 24,
+                                        "left": 24,
+                                        "width": 160,
+                                        "height": 24,
+                                    }
+                                }
+                            },
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result = run_cli(str(form_path))
+            self.assertEqual(result.returncode, 0)
+            self.assertIn("page0_cross_page_overlap", result.stdout)
+            self.assertIn("sharedBanner", result.stdout)
+            self.assertIn("contentField", result.stdout)
+            self.assertIn("Shared page 0 element", result.stdout)
+
     def test_exclude_can_disable_specific_rules_for_a_run(self):
         result = run_cli(
             str(FIXTURES_DIR / "overlap.form.4DForm"),
@@ -816,6 +864,71 @@ class LintCliTests(unittest.TestCase):
                         "          elements:",
                         "            fieldWhenHidden:",
                         "              ignore_rules: [no_overlap]",
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            result = run_cli(str(forms_dir), cwd=tmp)
+            self.assertEqual(result.returncode, 0)
+            self.assertIn("No findings", result.stdout)
+
+    def test_config_can_disable_page0_cross_page_overlap_for_specific_element(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            forms_dir = tmp / "Project" / "Sources" / "Forms" / "Shared"
+            forms_dir.mkdir(parents=True)
+            form_path = forms_dir / "form.4DForm"
+            form_path.write_text(
+                json.dumps(
+                    {
+                        "$4d": {"version": "1", "kind": "form"},
+                        "destination": "detailScreen",
+                        "windowTitle": "Suppressed Page 0 Overlap",
+                        "width": 320,
+                        "height": 180,
+                        "pages": [
+                            {
+                                "objects": {
+                                    "sharedBanner": {
+                                        "type": "button",
+                                        "top": 20,
+                                        "left": 20,
+                                        "width": 160,
+                                        "height": 28,
+                                        "text": "Shared",
+                                    }
+                                }
+                            },
+                            {
+                                "objects": {
+                                    "contentField": {
+                                        "type": "input",
+                                        "top": 24,
+                                        "left": 24,
+                                        "width": 160,
+                                        "height": 24,
+                                    }
+                                }
+                            },
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            config_path = tmp / ".4dform-lint.yaml"
+            config_path.write_text(
+                "\n".join(
+                    [
+                        "version: 1",
+                        "overrides:",
+                        "  files:",
+                        '    "Project/Sources/Forms/**/*.4DForm":',
+                        "      pages:",
+                        "        0:",
+                        "          elements:",
+                        "            sharedBanner:",
+                        "              ignore_rules: [page0_cross_page_overlap]",
                     ]
                 )
                 + "\n",
